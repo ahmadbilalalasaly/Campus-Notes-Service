@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Campus Notes Service</title>
+  <style>
+    body { font-family: system-ui, -apple-system, sans-serif; background: #0f172a; color: #f8fafc; margin: 0; padding: 2rem; }
+    .container { max-width: 720px; margin: 0 auto; background: #1e293b; padding: 2rem; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.4); }
+    h1 { margin-top: 0; color: #38bdf8; }
+    .subtitle { color: #94a3b8; margin-bottom: 1.5rem; }
+    form { display: flex; gap: 0.75rem; margin-bottom: 1.5rem; flex-wrap: wrap; }
+    input { flex: 1; min-width: 180px; padding: 0.75rem; border-radius: 8px; border: 1px solid #334155; background: #0f172a; color: #fff; }
+    button { padding: 0.75rem 1.25rem; border-radius: 8px; border: none; background: #0284c7; color: #fff; font-weight: 600; cursor: pointer; }
+    button:hover { background: #0369a1; }
+    .note { display: flex; justify-content: space-between; align-items: center; background: #0f172a; padding: 1rem; border-radius: 8px; margin-bottom: 0.75rem; border-left: 4px solid #38bdf8; }
+    .course { font-size: 0.85rem; color: #38bdf8; font-weight: bold; }
+    .title { font-size: 1.05rem; margin-top: 0.25rem; }
+    .del-btn { background: #dc2626; padding: 0.4rem 0.8rem; font-size: 0.85rem; }
+    .del-btn:hover { background: #b91c1c; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Campus Notes Service</h1>
+    <p class="subtitle">Manage university course notes & tasks — Containerized with Docker</p>
+    <form id="noteForm">
+      <input type="text" id="course" placeholder="Course (e.g. CSCI 3106)" required />
+      <input type="text" id="title" placeholder="Note or task description..." required />
+      <button type="submit">Add Note</button>
+    </form>
+    <div id="notesList"></div>
+  </div>
+  <script>
+    async function loadNotes() {
+      const res = await fetch('/api/notes');
+      const notes = await res.json();
+      const list = document.getElementById('notesList');
+      list.innerHTML = notes.map(n => `
+        <div class="note">
+          <div>
+            <div class="course">${n.course} • ${n.status}</div>
+            <div class="title">${n.title}</div>
+          </div>
+          <button class="del-btn" onclick="deleteNote(${n.id})">Delete</button>
+        </div>
+      `).join('');
+    }
+    document.getElementById('noteForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const course = document.getElementById('course').value;
+      const title = document.getElementById('title').value;
+      await fetch('/api/notes', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ course, title })
+      });
+      e.target.reset();
+      loadNotes();
+    });
+    async function deleteNote(id) {
+      await fetch('/api/notes/' + id, { method: 'DELETE' });
+      loadNotes();
+    }
+    loadNotes();
+  </script>
+</body>
+</html>
